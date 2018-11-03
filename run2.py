@@ -2,11 +2,13 @@
 import sys
 import numpy as np
 from sklearn.metrics import accuracy_score
-from hmm import HMM
+from sklearn import svm
+from sklearn.multiclass import OneVsRestClassifier
 from read import read_annotations_from_file
 from read import load_epochs_from_file
 from feature_extraction import features_to_codebook
 from feature_extraction import extract_features_from_epochs
+from sklearn.model_selection import GridSearchCV
 import warnings
 
 # Main
@@ -37,16 +39,19 @@ if __name__ == '__main__':
 
 	training_percentage = 0.8 # % of data used for training the model
 	sleep_stages_train, sleep_stages_test = np.split(sleep_stages, [int(training_percentage * sleep_stages.shape[0])])         
-	epoch_codes_train, epoch_codes_test = np.split(epoch_codes, [int(training_percentage * epoch_codes.shape[0])]) 
+	epoch_train, epoch_test = np.split(features, [int(training_percentage * features.shape[0])]) 
 
-	hmm = HMM(nr_states, nr_groups)
-	hmm.train(sleep_stages_train, epoch_codes_train)
-	x=hmm.get_state_sequence(epoch_codes_test)
 
-	sleep_stages_reverse = {y:x for x,y in sleep_stages_dict.items()}
-	actual_phases = list(map(lambda phase: sleep_stages_reverse[phase], sleep_stages_test))
-	predicted_phases = list(map(lambda phase: sleep_stages_reverse[phase], x))
-	print("Actual sleep phases paired with predicted sleep phases:")
-	for actual, predicted in zip(actual_phases, predicted_phases):
-		print(actual, predicted)
-	print("Accuracy:", accuracy_score(sleep_stages_test, x))
+	Cs = [1,1.1,1.2,1.5,2,2.3,3,3.5,4,5]
+	gammas = [0.0000001,0.0001,0.00001,0.01,0.1,0.5,0.8,1.5,1,2,2.5,3]
+	param_grid = {'C': Cs, 'gamma' : gammas}
+	grid_search = GridSearchCV(svm.SVC(kernel='rbf'),param_grid,cv=2,return_train_score=True)
+	grid_search.fit(epoch_train, sleep_stages_train)
+	sleep_stages_train_predicted = grid_search.predict(epoch_train)
+	sleep_stages_test_predicted = grid_search.predict(epoch_test) 
+    
+	print("Accuracy Score for on Training Set ")
+	print(accuracy_score(sleep_stages_train,sleep_stages_train_predicted))
+	    
+	print("Accuracy Score for Testing Set ")
+	print(accuracy_score(sleep_stages_test,sleep_stages_test_predicted))

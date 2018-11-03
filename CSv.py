@@ -4,9 +4,9 @@ Created on Tue Oct 30 23:23:48 2018
 
 @author: AARUSHI"""
 import csv
-file = open('30secepoch1.csv','w')
+file = open('30secepoch4.csv','w')
 writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-with open('SC4012EC-Hypnogram_data_annotations.csv') as csv_file:
+with open('SC4011EC-Hypnogram_data_annotations.csv') as csv_file:
     csv_reader = csv.reader(csv_file, delimiter=',')
     line_count = 0
     for row in csv_reader:
